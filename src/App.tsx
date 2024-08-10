@@ -1,25 +1,19 @@
 import { useEffect, useState } from "react";
 
 import apiClient, { CanceledError } from "./services/api-client";
-interface User {
-  id: number;
-  name: string;
-}
+import userService, { User } from "./services/user-service";
 
 function App() {
   const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState("");
   const [isLoading, setLoading] = useState(false);
   useEffect(() => {
-    // 浏览器的内置类，可以取消或者中止异步操作，例如获取请求和DOM操作，或者任何需要很长时间才能完成的操作。
-    const controller = new AbortController();
     setLoading(true);
     // promise是异步操作；
-    apiClient
-      .get<User[]>("/users", {
-        signal: controller.signal,
-      })
-      // .then((res) => console.log(res.data[0].name))
+
+    // .then((res) => console.log(res.data[0].name))
+    const { request, cancel } = userService.getAllUsers();
+    request
       .then((res) => {
         setUsers(res.data);
         setLoading(false);
@@ -34,7 +28,7 @@ function App() {
     // setLoading(false);
     // .finally(() => setLoading(false));
     // 移除请求
-    return () => controller.abort();
+    return () => cancel();
     // // ----------------------------------------------
     // // get -> await promise -> res / err
 
@@ -62,7 +56,7 @@ function App() {
   const deleteUser = (user: User) => {
     const originalUsers = [...users];
     setUsers(users.filter((u) => u.id !== user.id));
-    apiClient.delete("/users/" + user.id).catch((err) => {
+    userService.deleteUser(user.id).catch((err) => {
       setError(err.message);
       setUsers(originalUsers);
     });
@@ -74,8 +68,8 @@ function App() {
     const originalUsers = [...users];
     const newUser = { id: 0, name: "Mosh" };
     setUsers([newUser, ...users]);
-    apiClient
-      .post("/users", newUser)
+    userService
+      .createUser(newUser)
       .then(({ data: savedUser }) => {
         // console.log(res);
         setUsers([savedUser, ...users]);
@@ -94,7 +88,7 @@ function App() {
     const updatedUser = { ...user, name: user.name + "!" };
     setUsers(users.map((u) => (u.id === user.id ? updatedUser : u)));
     // http方法中，put一般是替换对象，patch一般是修补或者更新其一个或多个属性，实际操作中要根据后端是如何构建的，比如有些后端只支持put方法，不支持patch方法；在这个案例中，我们只需要更新一个属性，所以使用patch方法；
-    apiClient.patch("/users/" + user.id, updatedUser).catch((err) => {
+    userService.udpateUser(updatedUser).catch((err) => {
       setError(err.message);
       setUsers(originalUser);
     });
