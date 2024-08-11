@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import apiClient, { CanceledError } from "./services/api-client";
+import { CanceledError } from "./services/api-client";
 import userService, { User } from "./services/user-service";
 
 function App() {
@@ -12,7 +12,7 @@ function App() {
     // promise是异步操作；
 
     // .then((res) => console.log(res.data[0].name))
-    const { request, cancel } = userService.getAllUsers();
+    const { request, cancel } = userService.getAll<User>();
     request
       .then((res) => {
         setUsers(res.data);
@@ -56,7 +56,7 @@ function App() {
   const deleteUser = (user: User) => {
     const originalUsers = [...users];
     setUsers(users.filter((u) => u.id !== user.id));
-    userService.deleteUser(user.id).catch((err) => {
+    userService.delete(user.id).catch((err) => {
       setError(err.message);
       setUsers(originalUsers);
     });
@@ -69,7 +69,7 @@ function App() {
     const newUser = { id: 0, name: "Mosh" };
     setUsers([newUser, ...users]);
     userService
-      .createUser(newUser)
+      .create(newUser)
       .then(({ data: savedUser }) => {
         // console.log(res);
         setUsers([savedUser, ...users]);
@@ -88,7 +88,7 @@ function App() {
     const updatedUser = { ...user, name: user.name + "!" };
     setUsers(users.map((u) => (u.id === user.id ? updatedUser : u)));
     // http方法中，put一般是替换对象，patch一般是修补或者更新其一个或多个属性，实际操作中要根据后端是如何构建的，比如有些后端只支持put方法，不支持patch方法；在这个案例中，我们只需要更新一个属性，所以使用patch方法；
-    userService.udpateUser(updatedUser).catch((err) => {
+    userService.udpate(updatedUser).catch((err) => {
       setError(err.message);
       setUsers(originalUser);
     });
